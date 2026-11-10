@@ -13,7 +13,7 @@ export PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 # Download URLs
 export PANEL_DL_URL="${PANEL_DL_URL:-https://github.com/pelican/panel/releases/latest/download/panel.tar.gz}"
 export WINGS_DL_URL="${WINGS_DL_URL:-https://github.com/pelican/wings/releases/latest/download/wings_linux_}"
-export GIT_REPO_URL="${GIT_REPO_URL:-https://raw.githubusercontent.com/${REPO:-Zinidia/Pelinstaller}/${BRANCH:-Production}}"
+export GIT_REPO_URL="${GIT_REPO_URL:-https://raw.githubusercontent.com/${REPO:-DenanHK1/Pelinstaller-pt-BR}/${BRANCH:-Production}}"
 
 # Colors
 COLOR_YELLOW='\033[1;33m'
