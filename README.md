@@ -11,7 +11,7 @@
 3) Para baixar e executar o instalador, digite o comando abaixo no terminal e siga as instruções:
 
 ```bash
-bash <(curl -Ss https://raw.githubusercontent.com/DenanHK1/Pelinstaller-pt-BR/Production/install.sh || wget -O - https://raw.githubusercontent.com/SEU_USUARIO/Pelinstaller/Production/install.sh)
+bash <(curl -Ss https://raw.githubusercontent.com/DenanHK1/Pelinstaller-pt-BR/Production/install.sh || wget -O - https://raw.githubusercontent.com/DenanHK1/Pelinstaller/Production/install.sh)
 ```
 
 
