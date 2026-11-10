@@ -1,4 +1,5 @@
 #!/bin/bash
+# Versão traduzida para português do Brasil. Modificada a partir do Pelinstaller original (GPL-3.0).
 
 set -e
 
@@ -34,7 +35,7 @@ fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # shellcheck source=lib/lib.sh
   source /tmp/lib.sh || source <(curl -fsSL "$GIT_REPO_URL"/lib/lib.sh)
-  ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
+  ! fn_exists lib_loaded && echo "* ERRO: Não foi possível carregar o script lib" && exit 1
 fi
 
 # ------------------ Variables ----------------- #
@@ -43,7 +44,7 @@ export RM_WINGS=false
 
 # ---------- Uninstallation functions ---------- #
 rm_panel_files() {
-  output "Removing panel files .."
+  output "Removendo os arquivos do painel .."
   rm -rf /var/www/pelican /usr/local/bin/composer
   case "$OS" in
   debian | ubuntu)
@@ -56,30 +57,30 @@ rm_panel_files() {
     ;;
   esac
   systemctl restart nginx
-  success "Removed panel files."
+  success "Arquivos do painel removidos."
 }
 
 rm_docker_containers() {
-  output "Removing docker containers and images .."
+  output "Removendo contêineres e imagens do Docker .."
 
   docker system prune -a -f
 
-  success "Removed docker containers and images."
+  success "Contêineres e imagens do Docker removidos."
 }
 
 rm_wings_files() {
-  output "Removing wings files .."
+  output "Removendo os arquivos do wings .."
 
   # Stop and remove wings service
   systemctl disable --now wings || true
   rm -rf /etc/systemd/system/wings.service
 
   rm -rf /etc/pelican /usr/local/bin/wings /var/lib/pelican
-  success "Removed wings files."
+  success "Arquivos do wings removidos."
 }
 
 rm_services() {
-  output "Removing services .."
+  output "Removendo os serviços .."
   systemctl disable --now pelican-queue || true
   rm -rf /etc/systemd/system/pelican-queue.service
   case "$OS" in
@@ -92,25 +93,25 @@ rm_services() {
     rm -rf /etc/php-fpm.d/www-pelican.conf
     ;;
   esac
-  success "Removed services."
+  success "Serviços removidos."
 }
 
 rm_cron() {
-  output "Removing cron jobs .."
+  output "Removendo os cron jobs .."
   local web_user=www-data
   [[ "$OS" =~ ^(rocky|almalinux)$ ]] && web_user=nginx
   (crontab -u "$web_user" -l 2>/dev/null || true) | grep -vF "/var/www/pelican/artisan schedule:run" | crontab -u "$web_user" -
-  success "Removed cron jobs."
+  success "Cron jobs removidos."
 }
 
 rm_database() {
-  output "Removing database .."
+  output "Removendo o banco de dados .."
   valid_db=$(mariadb -u root -e "SELECT schema_name FROM information_schema.schemata;" | grep -v -E -- 'schema_name|information_schema|performance_schema|mysql' || true)
-  warning "Be careful! This database will be deleted!"
+  warning "Cuidado! Este banco de dados será apagado!"
   if [[ "$valid_db" == *"panel"* ]]; then
-    echo -n "* Database called panel has been detected. Is it the Pelican database? (y/N): "
+    echo -n "* Foi detectado um banco de dados chamado panel. Ele é o banco de dados do Pelican? (s/N): "
     read -r is_panel
-    if [[ "$is_panel" =~ [Yy] ]]; then
+    if [[ "$is_panel" =~ [YySs] ]]; then
       DATABASE=panel
     else
       print_list "$valid_db"
@@ -119,7 +120,7 @@ rm_database() {
     print_list "$valid_db"
   fi
   while [ -z "$DATABASE" ] || [[ $valid_db != *"$database_input"* ]]; do
-    echo -n "* Choose the panel database (to skip don't input anything): "
+    echo -n "* Escolha o banco de dados do painel (para pular, não digite nada): "
     read -r database_input
     if [[ -n "$database_input" ]]; then
       DATABASE="$database_input"
@@ -129,13 +130,13 @@ rm_database() {
   done
   [[ -n "$DATABASE" ]] && mariadb -u root -e "DROP DATABASE $DATABASE;"
   # Exclude usernames User and root (Hope no one uses username User)
-  output "Removing database user .."
+  output "Removendo o usuário do banco de dados .."
   valid_users=$(mariadb -u root -e "SELECT user FROM mysql.user;" | grep -v -E -- 'user|root' || true)
-  warning "Be careful! This user will be deleted!"
+  warning "Cuidado! Este usuário será apagado!"
   if [[ "$valid_users" == *"pelican"* ]]; then
-    echo -n "* User called pelican has been detected. Is it the pelican user? (y/N): "
+    echo -n "* Foi detectado um usuário chamado pelican. Ele é o usuário do pelican? (s/N): "
     read -r is_user
-    if [[ "$is_user" =~ [Yy] ]]; then
+    if [[ "$is_user" =~ [YySs] ]]; then
       DB_USER=pelican
     else
       print_list "$valid_users"
@@ -144,7 +145,7 @@ rm_database() {
     print_list "$valid_users"
   fi
   while [ -z "$DB_USER" ] || [[ $valid_users != *"$user_input"* ]]; do
-    echo -n "* Choose the panel user (to skip don't input anything): "
+    echo -n "* Escolha o usuário do painel (para pular, não digite nada): "
     read -r user_input
     if [[ -n "$user_input" ]]; then
       DB_USER=$user_input
@@ -154,7 +155,7 @@ rm_database() {
   done
   [[ -n "$DB_USER" ]] && mariadb -u root -e "DROP USER $DB_USER@'127.0.0.1';"
   mariadb -u root -e "FLUSH PRIVILEGES;"
-  success "Removed database and database user."
+  success "Banco de dados e usuário do banco de dados removidos."
 }
 
 # --------------- Main functions --------------- #
@@ -175,50 +176,50 @@ main() {
 
   # Check for existing installation
   if [ -d "/var/www/pelican" ]; then
-    output "Panel installation has been detected."
-    echo -e -n "* Do you want to remove panel? (y/N): "
+    output "Foi detectada uma instalação do painel."
+    echo -e -n "* Deseja remover o painel? (s/N): "
     read -r RM_PANEL_INPUT
-    [[ "$RM_PANEL_INPUT" =~ [Yy] ]] && RM_PANEL=true
+    [[ "$RM_PANEL_INPUT" =~ [YySs] ]] && RM_PANEL=true
   fi
 
   if [ -d "/etc/pelican" ]; then
-    output "Wings installation has been detected."
-    warning "This will remove all the servers!"
-    echo -e -n "* Do you want to remove Wings (daemon)? (y/N): "
+    output "Foi detectada uma instalação do Wings."
+    warning "Isso removerá todos os servidores!"
+    echo -e -n "* Deseja remover o Wings (daemon)? (s/N): "
     read -r RM_WINGS_INPUT
-    [[ "$RM_WINGS_INPUT" =~ [Yy] ]] && RM_WINGS=true
+    [[ "$RM_WINGS_INPUT" =~ [YySs] ]] && RM_WINGS=true
   fi
 
   if [ "$RM_PANEL" == false ] && [ "$RM_WINGS" == false ]; then
-    error "Nothing to uninstall!"
+    error "Nada para desinstalar!"
     exit 1
   fi
 
   summary
 
   # Confirm uninstallation
-  echo -e -n "* Continue with uninstallation? (y/N): "
+  echo -e -n "* Deseja continuar com a desinstalação? (s/N): "
   read -r CONFIRM
-  if [[ "$CONFIRM" =~ [Yy] ]]; then
+  if [[ "$CONFIRM" =~ [YySs] ]]; then
     perform_uninstall
   else
-    error "Uninstallation aborted."
+    error "Desinstalação cancelada."
     exit 1
   fi
 }
 
 summary() {
   print_brake 30
-  output "Uninstall panel? $RM_PANEL"
-  output "Uninstall wings? $RM_WINGS"
+  output "Desinstalar o painel? $RM_PANEL"
+  output "Desinstalar o wings? $RM_WINGS"
   print_brake 30
 }
 
 goodbye() {
   print_brake 62
-  [ "$RM_PANEL" == true ] && output "Panel uninstallation completed"
-  [ "$RM_WINGS" == true ] && output "Wings uninstallation completed"
-  output "Thank you for using this script."
+  [ "$RM_PANEL" == true ] && output "Desinstalação do painel concluída"
+  [ "$RM_WINGS" == true ] && output "Desinstalação do wings concluída"
+  output "Obrigado por usar este script."
   print_brake 62
 }
 

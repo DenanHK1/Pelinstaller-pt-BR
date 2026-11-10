@@ -1,4 +1,5 @@
 #!/bin/bash
+# Versão traduzida para português do Brasil. Modificada a partir do Pelinstaller original (GPL-3.0).
 
 set -e
 
@@ -34,7 +35,7 @@ fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # shellcheck source=lib/lib.sh
   source /tmp/lib.sh || source <(curl -fsSL "$GIT_REPO_URL"/lib/lib.sh)
-  ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
+  ! fn_exists lib_loaded && echo "* ERRO: Não foi possível carregar o script lib" && exit 1
 fi
 
 CHECKIP_URL="https://ip.forestracks.net"
@@ -42,18 +43,18 @@ DNS_SERVER="9.9.9.9"
 
 # Exit with error status code if user is not root
 if [[ $EUID -ne 0 ]]; then
-  echo "* This script must be executed with root privileges (sudo)." 1>&2
+  echo "* Este script deve ser executado com privilégios de root (sudo)." 1>&2
   exit 1
 fi
 
 fail() {
-  output "The DNS record ($dns_record) does not match your server IP. Please make sure the FQDN $fqdn is pointing to the IP of your server, $ip"
-  output "If you are using Cloudflare, please disable the proxy or opt out from Let's Encrypt."
+  output "O registro DNS ($dns_record) não corresponde ao IP do seu servidor. Verifique se o FQDN $fqdn aponta para o IP do seu servidor, $ip"
+  output "Se você usa o Cloudflare, desative o proxy ou opte por não usar o Let's Encrypt."
 
-  echo -n "* Proceed anyways (your install will be broken if you do not know what you are doing)? (y/N): "
+  echo -n "* Continuar mesmo assim (sua instalação ficará quebrada se você não souber o que está fazendo)? (s/N): "
   read -r override
 
-  [[ ! "$override" =~ [Yy] ]] && error "Invalid FQDN or DNS record" && exit 1
+  [[ ! "$override" =~ [YySs] ]] && error "FQDN ou registro DNS inválido" && exit 1
   return 0
 }
 
@@ -73,24 +74,24 @@ dep_install() {
 }
 
 confirm() {
-  output "This script will perform a HTTPS request to the endpoint $CHECKIP_URL"
-  output "The official IP check service for this script, https://ip.forestracks.net"
-  output "- The reason is to check if your domain properly resolves to this system's IP."
-  output "- We will store request logs for several days for DDoS Mitigation reasons."
-  output "- Requests may also be logged by Cloudflare and other transit providers."
-  output "If you would like to use another service, modify the CHECKIP_URL env var."
+  output "Este script fará uma requisição HTTPS ao endpoint $CHECKIP_URL"
+  output "O serviço oficial de verificação de IP deste script: https://ip.forestracks.net"
+  output "- O motivo é verificar se o seu domínio resolve corretamente para o IP deste sistema."
+  output "- Os registros das requisições são armazenados por vários dias para mitigação de DDoS."
+  output "- As requisições também podem ser registradas pelo Cloudflare e por outros provedores de trânsito."
+  output "Se preferir usar outro serviço, altere a variável de ambiente CHECKIP_URL."
 
-  echo -e -n "* I agree that this HTTPS request is performed (y/N): "
+  echo -e -n "* Concordo que esta requisição HTTPS seja feita (s/N): "
   read -r confirm
-  [[ "$confirm" =~ [Yy] ]] || (error "User did not agree" && false)
+  [[ "$confirm" =~ [YySs] ]] || (error "O usuário não concordou" && false)
 }
 
 dns_verify() {
-  output "Resolving DNS for $fqdn"
+  output "Resolvendo o DNS de $fqdn"
   ip=$(curl -4 -s $CHECKIP_URL)
   dns_record=$(dig +short @$DNS_SERVER "$fqdn" | tail -n1)
   [ "${ip}" != "${dns_record}" ] && fail
-  output "DNS verified!"
+  output "DNS verificado!"
 }
 
 main() {

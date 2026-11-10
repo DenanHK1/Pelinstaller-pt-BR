@@ -1,4 +1,5 @@
 #!/bin/bash
+# Versão traduzida para português do Brasil. Modificada a partir do Pelinstaller original (GPL-3.0).
 
 # Pelinstaller
 # Copyright Matthew Jacob 2021-2026
@@ -13,7 +14,7 @@ fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # shellcheck source=lib/lib.sh
   source /tmp/lib.sh || source <(curl -fsSL "$GIT_REPO_URL"/lib/lib.sh)
-  ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
+  ! fn_exists lib_loaded && echo "* ERRO: Não foi possível carregar o script lib" && exit 1
 fi
 
 check_os_x86_64
@@ -38,7 +39,7 @@ collect_input() {
   local default_ip
   default_ip="$(hostname -I | awk '{print $1}')"
 
-  required_input HOSTNAME "FQDN or IP for the panel [$default_ip]: " "" "$default_ip"
+  required_input HOSTNAME "FQDN ou IP do painel [$default_ip]: " "" "$default_ip"
 
   # IPs / localhost uses http or FQDNs use https
   if [[ "$HOSTNAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ "$HOSTNAME" == *:* ]] || [ "$HOSTNAME" == "localhost" ]; then
@@ -51,32 +52,32 @@ collect_input() {
 
   # Admin account and Let's Encrypt email
   if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
-    email_input EMAIL "Provide the email address that will be used to configure Let's Encrypt and Pelican: " "Email cannot be empty or invalid"
+    email_input EMAIL "Informe o endereço de e-mail que será usado para configurar o Let's Encrypt e o Pelican: " "O e-mail não pode estar vazio nem ser inválido"
     LE_EMAIL="$EMAIL"
   else
-    required_input EMAIL "Admin email [admin@example.com]: " "" "admin@example.com"
+    required_input EMAIL "E-mail do administrador [admin@example.com]: " "" "admin@example.com"
     LE_EMAIL=""
   fi
 
-  password_input USER_PASSWORD "Password for the admin account (blank for auto-generate): " "" "$(gen_passwd 32)"
+  password_input USER_PASSWORD "Senha da conta de administrador (deixe em branco para gerar automaticamente): " "" "$(gen_passwd 32)"
 }
 
 # ------------------ Docker engine ------------------ #
 install_docker() {
   install_docker_kernel_modules
   if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-    success "Docker already installed"
+    success "Docker já instalado"
     return
   fi
-  output "Installing Docker Engine .."
+  output "Instalando o Docker Engine .."
   curl -fsSL https://get.docker.com | sh
   systemctl enable --now docker
-  success "Docker installed"
+  success "Docker instalado"
 }
 
 # ------------------ Compose file ------------------ #
 write_compose() {
-  output "Writing docker compose file to $INSTALL_DIR  .."
+  output "Gravando o arquivo docker compose em $INSTALL_DIR .."
   mkdir -p "$INSTALL_DIR"
   curl -fsSL -o "$INSTALL_DIR/docker-compose.yml" "$COMPOSE_URL"
 
@@ -88,7 +89,7 @@ write_compose() {
     -e "s|<db_root_password>|$DB_ROOT_PASSWORD|g" \
     "$INSTALL_DIR/docker-compose.yml"
 
-  success "Compose file written"
+  success "Arquivo compose gravado"
 }
 
 # ------------------ Bring the stack up ------------------ #
@@ -97,15 +98,15 @@ compose_up() {
   docker compose version >/dev/null 2>&1 || DC="docker-compose"
 
   cd "$INSTALL_DIR" || exit 1
-  output "Pulling images .."
+  output "Baixando as imagens .."
   $DC pull
-  output "Starting containers .."
+  output "Iniciando os contêineres .."
   $DC up -d
 }
 
 # ------------------ Migrate + admin user ------------------ #
 configure_panel() {
-  output "Waiting for the panel and database to finish configuring .."
+  output "Aguardando o painel e o banco de dados terminarem de ser configurados .."
   local ready=false
   for _ in $(seq 1 60); do
     if $DC exec -T panel php artisan p:user:make \
@@ -120,11 +121,11 @@ configure_panel() {
   done
 
   if [ "$ready" != true ]; then
-    error "Panel did not configure in time. Check logs with 'cd $INSTALL_DIR && $DC logs panel'."
+    error "O painel não foi configurado a tempo. Verifique os logs com 'cd $INSTALL_DIR && $DC logs panel'."
     exit 1
   fi
 
-  success "Panel configured"
+  success "Painel configurado"
 }
 
 # ------------------ Firewall ------------------ #
@@ -143,11 +144,11 @@ open_firewall() {
 main() {
   # Check for existing installation
   if [ -f "$INSTALL_DIR/docker-compose.yml" ]; then
-    warning "An existing deployment was found at $INSTALL_DIR. Continuing will overwrite it."
-    echo -e -n "* Are you sure you want to proceed? (y/N): "
+    warning "Uma instalação existente foi encontrada em $INSTALL_DIR. Continuar a sobrescreverá."
+    echo -e -n "* Tem certeza de que deseja continuar? (s/N): "
     read -r CONFIRM_PROCEED || true
-    if [[ ! "$CONFIRM_PROCEED" =~ [Yy] ]]; then
-      error "Installation aborted!"
+    if [[ ! "$CONFIRM_PROCEED" =~ [YySs] ]]; then
+      error "Instalação cancelada!"
       exit 1
     fi
   fi
@@ -158,19 +159,19 @@ main() {
   export INSTALL_DIR HOSTNAME EMAIL USER_PASSWORD APP_URL LE_EMAIL
 
   # Confirm installation
-  echo -e -n "\n* Initial configuration completed. Continue with installation? (y/N): "
+  echo -e -n "\n* Configuração inicial concluída. Deseja continuar com a instalação? (s/N): "
   read -r CONFIRM || true
-  if [[ "$CONFIRM" =~ [Yy] ]]; then
-    output "Starting Pelican Panel installation via Docker .."
+  if [[ "$CONFIRM" =~ [YySs] ]]; then
+    output "Iniciando a instalação do Pelican Panel via Docker .."
     install_docker
     write_compose
     compose_up
     configure_panel
     open_firewall
 
-    success "Pelican Panel install complete. URL: $APP_URL"
+    success "Instalação do Pelican Panel concluída. URL: $APP_URL"
   else
-    error "Installation aborted."
+    error "Instalação cancelada."
     exit 1
   fi
 
@@ -179,13 +180,13 @@ main() {
 
 summary() {
   print_brake 62
-  output "Pelican Panel installed successfully!"
-  output "Panel URL: $APP_URL"
-  output "Username: admin"
-  output "Email:    $EMAIL"
-  output "Password: $USER_PASSWORD"
+  output "Pelican Panel instalado com sucesso!"
+  output "URL do painel: $APP_URL"
+  output "Usuário: admin"
+  output "E-mail: $EMAIL"
+  output "Senha: $USER_PASSWORD"
   output ""
-  output "Manage it with: cd $INSTALL_DIR && docker compose [ps|logs|restart|down]"
+  output "Gerencie com: cd $INSTALL_DIR && docker compose [ps|logs|restart|down]"
   print_brake 62
 }
 

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Versão traduzida para português do Brasil. Modificada a partir do Pelinstaller original (GPL-3.0).
 
 set -eo pipefail
 
@@ -38,7 +39,7 @@ error() {
   COLOR_NC='\033[0m'
 
   echo ""
-  echo -e "* ${COLOR_RED}ERROR${COLOR_NC}: $1"
+  echo -e "* ${COLOR_RED}ERRO${COLOR_NC}: $1"
   echo ""
 }
 
@@ -55,7 +56,7 @@ while [[ $# -gt 0 ]]; do
     --branch=*|--source=*) BRANCH="${1#*=}"; shift ;;
     basic|docker|panel|wings|both|uninstall)
       MODE="$1"; shift ;;
-    *) error "Unknown argument: '$1'. Expected a mode (basic, docker, panel, wings, both, uninstall) arg --repo or --branch."; exit 1 ;;
+    *) error "Argumento desconhecido: '$1'. Esperado um modo (basic, docker, panel, wings, both, uninstall) ou os argumentos --repo ou --branch."; exit 1 ;;
   esac
 done
 
@@ -65,13 +66,13 @@ LOG_PATH="/tmp/pelinstaller.log"
 
 # Exit with error status code if user is not root
 if [[ $EUID -ne 0 ]]; then
-  error "This script must be executed with root privileges (sudo)." 1>&2
+  error "Este script deve ser executado com privilégios de root (sudo)." 1>&2
   exit 1
 fi
 
 # Check for curl
 if ! [ -x "$(command -v curl)" ]; then
-  echo "* Installing dependencies."
+  echo "* Instalando dependências."
   # Rockey / Alma
   if [ -n "$(command -v yum)" ]; then
     yum update -y >> /dev/null 2>&1
@@ -84,8 +85,8 @@ if ! [ -x "$(command -v curl)" ]; then
   fi
   # Check if curl is installed
   if ! [ -x "$(command -v curl)" ]; then
-    echo "* curl is required in order for this script to work."
-    echo "* install using apt (Debian and derivatives) or yum/dnf (CentOS)"
+    echo "* O curl é necessário para que este script funcione."
+    echo "* instale usando apt (Debian e derivados) ou yum/dnf (CentOS)"
     exit 1
   fi
 fi
@@ -115,7 +116,7 @@ execute_arg() {
     wings)     run_mode "wings" ;;
     both)      run_mode "panel"; run_mode "wings" ;;
     uninstall) run_mode "uninstall" ;;
-    *) error "Invalid option '$1'. Expected one of: basic, docker, panel, wings, both, uninstall."; exit 1 ;;
+    *) error "Opção inválida '$1'. Esperado um destes: basic, docker, panel, wings, both, uninstall."; exit 1 ;;
   esac
 }
 
@@ -131,35 +132,35 @@ fi
 if [ -d "/var/www/pelican" ]; then
   existing_choice=""
   while [ -z "$existing_choice" ]; do
-    error "The script has detected that you already have Pelican panel on your system!"
-    output "[1] Uninstall Pelican - Attempt automated Pelican uninstallation."
-    output "[2] Continue Anyway - Ignore warnings and attempt to install Pelican anyway."
-    output "[3] Exit Installer - Cancel installation process."
+    error "O script detectou que você já tem o painel Pelican instalado neste sistema!"
+    output "[1] Desinstalar o Pelican - Tentar a desinstalação automática do Pelican."
+    output "[2] Continuar mesmo assim - Ignorar os avisos e tentar instalar o Pelican."
+    output "[3] Sair do instalador - Cancelar o processo de instalação."
 
-    echo -n "* Input 1-3: "
+    echo -n "* Digite de 1 a 3: "
     read -r action || true
     case "$action" in
       1)
         existing_choice="uninstall"
-        echo "Attempting uninstall .."
+        echo "Tentando desinstalar .."
         run_mode "uninstall"
-        echo -e -n "* Pelican successfully uninstalled, attempt an install now? (y/N): "
+        echo -e -n "* Pelican desinstalado com sucesso. Deseja tentar instalar agora? (s/N): "
         read -r CONFIRM_PROCEED || true
-        if [[ ! "$CONFIRM_PROCEED" =~ [Yy] ]]; then
-          error "Installation aborted!"
+        if [[ ! "$CONFIRM_PROCEED" =~ [YySs] ]]; then
+          error "Instalação cancelada!"
           exit 1
         fi
         ;;
       2)
         existing_choice="continue"
-        echo "Attempting to proceed anyway .."
+        echo "Tentando continuar mesmo assim .."
         ;;
       3)
-        echo "Exiting installer .."
+        echo "Saindo do instalador .."
         exit 1
         ;;
       *)
-        error "Invalid option. Please input a number between 1 and 3."
+        error "Opção inválida. Digite um número de 1 a 3."
         ;;
     esac
   done
@@ -168,13 +169,13 @@ fi
 # ----------------- Stage 1: Panel install mode ----------------- #
 panel_mode=""
 while [ -z "$panel_mode" ]; do
-  output "What Panel installation mode would you like to use?"
-  output "[0] Skip - Do not install the panel (default)"
-  output "[1] Basic - Zero prompts, development environment (panel + wings, HTTP-only)"
-  output "[2] Docker (Recommended) - Docker compose using the official ghcr images"
-  output "[3] Bare metal - Standard install without Docker (prompts for FQDN/SSL)"
+  output "Qual modo de instalação do painel você deseja usar?"
+  output "[0] Pular - Não instalar o painel (padrão)"
+  output "[1] Básico - Sem perguntas, ambiente de desenvolvimento (painel + wings, somente HTTP)"
+  output "[2] Docker (Recomendado) - Docker compose usando as imagens oficiais do ghcr"
+  output "[3] Bare metal - Instalação padrão sem Docker (pergunta FQDN/SSL)"
 
-  echo -n "* Input 0-3 [0]: "
+  echo -n "* Digite de 0 a 3 [0]: "
   read -r action || true
   [ -z "$action" ] && action=0
 
@@ -183,7 +184,7 @@ while [ -z "$panel_mode" ]; do
     1) panel_mode="basic" ;;
     2) panel_mode="docker" ;;
     3) panel_mode="panel" ;;
-    *) error "Invalid option" ;;
+    *) error "Opção inválida" ;;
   esac
 done
 
@@ -193,18 +194,18 @@ wings_mode="skip"
 if [ "$panel_mode" != "basic" ]; then
   chosen=""
   while [ -z "$chosen" ]; do
-    output "Do you want to install Wings (the machine daemon)?"
-    output "[0] Skip - Do not install wings (default)"
-    output "[1] Install Wings"
+    output "Deseja instalar o Wings (o daemon da máquina)?"
+    output "[0] Pular - Não instalar o wings (padrão)"
+    output "[1] Instalar o Wings"
 
-    echo -n "* Input 0-1 [0]: "
+    echo -n "* Digite 0 ou 1 [0]: "
     read -r action || true
     [ -z "$action" ] && action=0
 
     case "$action" in
       0) chosen="skip" ;;
       1) chosen="wings"; wings_mode="wings" ;;
-      *) error "Invalid option" ;;
+      *) error "Opção inválida" ;;
     esac
   done
 fi
@@ -214,11 +215,11 @@ case "$panel_mode" in
   basic)  run_mode "basic" ;;
   docker) run_mode "docker" ;;
   panel)  run_mode "panel" ;;
-  skip)   output "Skipping panel installation." ;;
+  skip)   output "Pulando a instalação do painel." ;;
 esac
 
 [ "$wings_mode" == "wings" ] && run_mode "wings"
 
 if [ "$panel_mode" == "skip" ] && [ "$wings_mode" == "skip" ]; then
-  output "Nothing selected. Exiting."
+  output "Nada selecionado. Saindo."
 fi

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Versão traduzida para português do Brasil. Modificada a partir do Pelinstaller original (GPL-3.0).
 
 set -e
 
@@ -34,7 +35,7 @@ fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # shellcheck source=lib/lib.sh
   source /tmp/lib.sh || source <(curl -fsSL "$GIT_REPO_URL"/lib/lib.sh)
-  ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
+  ! fn_exists lib_loaded && echo "* ERRO: Não foi possível carregar o script lib" && exit 1
 fi
 
 # ------------------ Variables ----------------- #
@@ -66,26 +67,26 @@ export CONFIGURE_FIREWALL=false
 # ------------ User input functions ------------ #
 ask_letsencrypt() {
   if [ "$CONFIGURE_FIREWALL" == false ]; then
-    warning "Let's Encrypt requires port 80/443 to be opened! You have opted out of the automatic firewall configuration; use this at your own risk (if port 80/443 is closed, the script will fail)!"
+    warning "O Let's Encrypt exige que as portas 80/443 estejam abertas! Você optou por não configurar o firewall automaticamente; use por sua conta e risco (se as portas 80/443 estiverem fechadas, o script falhará)!"
   fi
 
-  echo -e -n "* Do you want to automatically configure HTTPS using Let's Encrypt? (y/N): "
+  echo -e -n "* Deseja configurar o HTTPS automaticamente usando o Let's Encrypt? (s/N): "
   read -r CONFIRM_SSL
 
-  if [[ "$CONFIRM_SSL" =~ [Yy] ]]; then
+  if [[ "$CONFIRM_SSL" =~ [YySs] ]]; then
     CONFIGURE_LETSENCRYPT=true
     ASSUME_SSL=false
   fi
 }
 
 ask_assume_ssl() {
-  output "Let's Encrypt is not going to be automatically configured by this script (user opted out)."
-  output "You can 'assume' Let's Encrypt, which means the script will download a nginx configuration that is configured to use a Let's Encrypt certificate but the script won't obtain the certificate for you."
-  output "If you assume SSL and do not obtain the certificate, your installation will not work."
-  echo -n "* Assume SSL or not? (y/N): "
+  output "O Let's Encrypt não será configurado automaticamente por este script (o usuário optou por não usar)."
+  output "Você pode 'assumir' o Let's Encrypt: o script baixará uma configuração do nginx preparada para usar um certificado do Let's Encrypt, mas não obterá o certificado para você."
+  output "Se você assumir o SSL e não obtiver o certificado, a instalação não funcionará."
+  echo -n "* Assumir o SSL? (s/N): "
   read -r ASSUME_SSL_INPUT
 
-  [[ "$ASSUME_SSL_INPUT" =~ [Yy] ]] && ASSUME_SSL=true
+  [[ "$ASSUME_SSL_INPUT" =~ [YySs] ]] && ASSUME_SSL=true
   true
 }
 
@@ -93,20 +94,20 @@ check_FQDN_SSL() {
   if [[ $(invalid_ip "$HOSTNAME") == 1 && $HOSTNAME != 'localhost' ]]; then
     SSL_AVAILABLE=true
   else
-    warning "* Let's Encrypt will not be available for IP addresses."
-    output "To use Let's Encrypt, you must use a valid domain name."
+    warning "* O Let's Encrypt não está disponível para endereços IP."
+    output "Para usar o Let's Encrypt, você precisa usar um nome de domínio válido."
   fi
 }
 
 # --------- Main installation functions -------- #
 install_composer() {
-  output "Installing composer .."
+  output "Instalando o composer .."
   curl -fsS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-  success "Composer installed!"
+  success "Composer instalado!"
 }
 
 ptdl_dl() {
-  output "Downloading Pelican Panel files .. "
+  output "Baixando os arquivos do Pelican Panel .. "
   mkdir -p /var/www/pelican/storage/framework/cache/data/{9c,9c/a8,8a,8a/69}
   cd /var/www/pelican || exit
 
@@ -116,24 +117,24 @@ ptdl_dl() {
 
   cp .env.example .env
 
-  success "Downloaded Pelican Panel files!"
+  success "Arquivos do Pelican Panel baixados!"
 }
 
 install_composer_deps() {
-  output "Installing composer dependencies .."
+  output "Instalando as dependências do composer .."
   [ "$OS" == "rocky" ] || [ "$OS" == "almalinux" ] && export PATH=/usr/local/bin:$PATH
   local attempt
   for attempt in 1 2 3; do
     COMPOSER_ALLOW_SUPERUSER=1 timeout 600 composer install --no-dev --optimize-autoloader && break
-    [ "$attempt" == 3 ] && error "composer install failed" && exit 1
-    warning "composer install failed or stalled, retrying .."
+    [ "$attempt" == 3 ] && error "Falha no composer install" && exit 1
+    warning "O composer install falhou ou travou, tentando novamente .."
   done
-  success "Installed composer dependencies!"
+  success "Dependências do composer instaladas!"
 }
 
 # Configure environment
 configure() {
-  output "Configuring environment .."
+  output "Configurando o ambiente .."
 
   local app_url="http://$HOSTNAME"
   [ "$ASSUME_SSL" == true ] && app_url="https://$HOSTNAME"
@@ -165,7 +166,7 @@ configure() {
     --password="$user_password" \
     --admin=1
 
-  success "Configured environment!"
+  success "Ambiente configurado!"
 }
 
 # Set proper directory permissions for distro
@@ -182,7 +183,7 @@ set_folder_permissions() {
 }
 
 insert_cronjob() {
-  output "Installing cronjob.. "
+  output "Instalando o cronjob.. "
 
   local web_user
   case "$OS" in
@@ -199,11 +200,11 @@ insert_cronjob() {
     echo "* * * * * php /var/www/pelican/artisan schedule:run >> /dev/null 2>&1"
   } | crontab -u "$web_user" -
 
-  success "Cronjob installed!"
+  success "Cronjob instalado!"
 }
 
 install_pelican_queue() {
-  output "Installing pelican-queue service .."
+  output "Instalando o serviço pelican-queue .."
 
   local web_user
   case "$OS" in
@@ -221,7 +222,7 @@ install_pelican_queue() {
   systemctl enable pelican-queue.service
   systemctl start pelican-queue
 
-  success "Installed pelican-queue!"
+  success "pelican-queue instalado!"
 }
 
 # -------- OS specific install functions ------- #
@@ -265,7 +266,7 @@ ubuntu_dep() {
   if curl -fsSL "https://ppa.launchpadcontent.net/ondrej/php/ubuntu/dists/${UBUNTU_CODENAME}/Release" >/dev/null; then
     LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
   else
-    warning "Ondrej PHP PPA does not support ${UBUNTU_CODENAME}; using Ubuntu packages."
+    warning "O PPA Ondrej PHP não suporta ${UBUNTU_CODENAME}; usando os pacotes do Ubuntu."
   fi
 }
 
@@ -292,7 +293,7 @@ alma_rocky_dep() {
 }
 
 dep_install() {
-  output "Installing dependencies for $OS $OS_VER .."
+  output "Instalando dependências para $OS $OS_VER .."
 
   # Update repos before installing
   update_repos
@@ -340,33 +341,33 @@ dep_install() {
 
   enable_services
 
-  success "Dependencies installed!"
+  success "Dependências instaladas!"
 }
 
 # --------------- Other functions -------------- #
 firewall_ports() {
-  output "Opening ports: 22 (SSH), 80 (HTTP) and 443 (HTTPS)"
+  output "Abrindo as portas: 22 (SSH), 80 (HTTP) e 443 (HTTPS)"
 
   firewall_allow_ports "22 80 443"
 
-  success "Firewall ports opened!"
+  success "Portas do firewall abertas!"
 }
 
 letsencrypt() {
   FAILED=false
 
-  output "Configuring Let's Encrypt .."
+  output "Configurando o Let's Encrypt .."
 
   # Obtain certificate
   certbot --nginx --redirect --no-eff-email --email "$email" -d "$HOSTNAME" || FAILED=true
 
   # Check if it succeded
   if [ ! -d "/etc/letsencrypt/live/$HOSTNAME/" ] || [ "$FAILED" == true ]; then
-    warning "The process of obtaining a Let's Encrypt certificate failed!"
-    echo -n "* Still assume SSL? (y/N): "
+    warning "Falha ao obter o certificado do Let's Encrypt!"
+    echo -n "* Assumir o SSL mesmo assim? (s/N): "
     read -r CONFIGURE_SSL
 
-    if [[ "$CONFIGURE_SSL" =~ [Yy] ]]; then
+    if [[ "$CONFIGURE_SSL" =~ [YySs] ]]; then
       ASSUME_SSL=true
       CONFIGURE_LETSENCRYPT=false
       configure_nginx
@@ -375,13 +376,13 @@ letsencrypt() {
       CONFIGURE_LETSENCRYPT=false
     fi
   else
-    success "The process of obtaining a Let's Encrypt certificate succeeded!"
+    success "Certificado do Let's Encrypt obtido com sucesso!"
   fi
 }
 
 # ------ Webserver configuration functions ----- #
 configure_nginx() {
-  output "Configuring nginx .."
+  output "Configurando o nginx .."
 
   if [ "$ASSUME_SSL" == true ] && [ "$CONFIGURE_LETSENCRYPT" == false ]; then
     DL_FILE="nginx_ssl.conf"
@@ -420,19 +421,19 @@ configure_nginx() {
     if nginx -t; then
       systemctl restart nginx
     else
-      warning "Nginx configuration was written but not reloaded. Install the SSL certificate files and restart nginx."
+      warning "A configuração do Nginx foi gravada, mas não foi recarregada. Instale os arquivos do certificado SSL e reinicie o nginx."
     fi
   else
     nginx -t
     systemctl restart nginx
   fi
 
-  success "Nginx configured!"
+  success "Nginx configurado!"
 }
 
 # --------------- Main functions --------------- #
 perform_install() {
-  output "Starting installation.. this might take a while!"
+  output "Iniciando a instalação.. isso pode demorar um pouco!"
   dep_install
   install_composer
   ptdl_dl
@@ -451,11 +452,11 @@ perform_install() {
 main() {
   # Check for existing installation
   if [ -d "/var/www/pelican" ]; then
-    warning "The script has detected that you already have Pelican panel on your system! You cannot run the script multiple times, it will fail!"
-    echo -e -n "* Are you sure you want to proceed? (y/N): "
+    warning "O script detectou que você já tem o painel Pelican instalado neste sistema! Não é possível executar o script várias vezes, ele falhará!"
+    echo -e -n "* Tem certeza de que deseja continuar? (s/N): "
     read -r CONFIRM_PROCEED || true
-    if [[ ! "$CONFIRM_PROCEED" =~ [Yy] ]]; then
-      error "Installation aborted!"
+    if [[ ! "$CONFIRM_PROCEED" =~ [YySs] ]]; then
+      error "Instalação cancelada!"
       exit 1
     fi
   fi
@@ -469,20 +470,20 @@ main() {
   MYSQL_USER="pelican"
   MYSQL_PASSWORD="$(gen_passwd 64)"
 
-  email_input email "Provide the email address that will be used to configure Let's Encrypt and Pelican: " "Email cannot be empty or invalid"
+  email_input email "Informe o endereço de e-mail que será usado para configurar o Let's Encrypt e o Pelican: " "O e-mail não pode estar vazio nem ser inválido"
 
   # Initial admin account
   user_email="$email"
   user_username="admin"
-  password_input user_password "Password for the admin account (blank for auto-generate): " "" "$(gen_passwd 32)"
+  password_input user_password "Senha da conta de administrador (deixe em branco para gerar automaticamente): " "" "$(gen_passwd 32)"
 
   print_brake 72
 
   # Set FQDN
   while [ -z "$HOSTNAME" ]; do
-    echo -n "* FQDN or IP for the panel: "
+    echo -n "* FQDN ou IP do painel: "
     read -r HOSTNAME
-    [ -z "$HOSTNAME" ] && error "FQDN cannot be empty"
+    [ -z "$HOSTNAME" ] && error "O FQDN não pode estar vazio"
   done
 
   # Check if SSL is available
@@ -506,46 +507,46 @@ main() {
   summary
 
   # Confirm installation
-  echo -e -n "\n* Initial configuration completed. Continue with installation? (y/N): "
+  echo -e -n "\n* Configuração inicial concluída. Deseja continuar com a instalação? (s/N): "
   read -r CONFIRM
-  if [[ "$CONFIRM" =~ [Yy] ]]; then
+  if [[ "$CONFIRM" =~ [YySs] ]]; then
     perform_install
   else
-    error "Installation aborted."
+    error "Instalação cancelada."
     exit 1
   fi
 }
 
 summary() {
   print_brake 62
-  output "Pelican panel $PELICAN_PANEL_VERSION with nginx on $OS"
-  output "Database name: $MYSQL_DB"
-  output "Database user: $MYSQL_USER"
-  output "Database password: (censored)"
-  output "Email: $email"
-  output "User email: $user_email"
-  output "Username: $user_username"
-  output "User password: (censored)"
+  output "Pelican panel $PELICAN_PANEL_VERSION com nginx em $OS"
+  output "Nome do banco de dados: $MYSQL_DB"
+  output "Usuário do banco de dados: $MYSQL_USER"
+  output "Senha do banco de dados: (oculta)"
+  output "E-mail: $email"
+  output "E-mail do usuário: $user_email"
+  output "Nome de usuário: $user_username"
+  output "Senha do usuário: (oculta)"
   output "Hostname/FQDN: $HOSTNAME"
-  output "Configure Firewall? $CONFIGURE_FIREWALL"
-  output "Configure Let's Encrypt? $CONFIGURE_LETSENCRYPT"
-  output "Assume SSL? $ASSUME_SSL"
+  output "Configurar firewall? $CONFIGURE_FIREWALL"
+  output "Configurar Let's Encrypt? $CONFIGURE_LETSENCRYPT"
+  output "Assumir SSL? $ASSUME_SSL"
   print_brake 62
 }
 
 goodbye() {
   print_brake 62
-  output "Panel installation completed"
+  output "Instalação do painel concluída"
   output ""
 
-  [ "$CONFIGURE_LETSENCRYPT" == true ] && output "Your panel should be accessible from $(hyperlink "$HOSTNAME")"
-  [ "$ASSUME_SSL" == true ] && [ "$CONFIGURE_LETSENCRYPT" == false ] && output "You have opted in to use SSL, but not via Let's Encrypt automatically. Your panel will not work until SSL has been configured."
-  [ "$ASSUME_SSL" == false ] && [ "$CONFIGURE_LETSENCRYPT" == false ] && output "Your panel should be accessible from $(hyperlink "$HOSTNAME")"
+  [ "$CONFIGURE_LETSENCRYPT" == true ] && output "Seu painel deve estar acessível em $(hyperlink "$HOSTNAME")"
+  [ "$ASSUME_SSL" == true ] && [ "$CONFIGURE_LETSENCRYPT" == false ] && output "Você optou por usar SSL, mas não automaticamente pelo Let's Encrypt. Seu painel não funcionará até que o SSL seja configurado."
+  [ "$ASSUME_SSL" == false ] && [ "$CONFIGURE_LETSENCRYPT" == false ] && output "Seu painel deve estar acessível em $(hyperlink "$HOSTNAME")"
 
   output ""
-  output "Installation is using nginx on $OS"
-  output "Thank you for using this script."
-  [ "$CONFIGURE_FIREWALL" == false ] && echo -e "* ${COLOR_RED}Note${COLOR_NC}: If you haven't configured the firewall: 80/443 (HTTP/HTTPS) is required to be open!"
+  output "A instalação está usando nginx em $OS"
+  output "Obrigado por usar este script."
+  [ "$CONFIGURE_FIREWALL" == false ] && echo -e "* ${COLOR_RED}Nota${COLOR_NC}: Se você não configurou o firewall, as portas 80/443 (HTTP/HTTPS) precisam estar abertas!"
   print_brake 62
 }
 

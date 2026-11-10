@@ -1,4 +1,5 @@
 #!/bin/bash
+# Versão traduzida para português do Brasil. Modificada a partir do Pelinstaller original (GPL-3.0).
 
 # Pelican Installer
 # Copyright Matthew Jacob 2021-2026
@@ -38,7 +39,7 @@ fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # shellcheck source=lib/lib.sh
   source /tmp/lib.sh || source <(curl -fsSL "$GIT_REPO_URL"/lib/lib.sh)
-  ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
+  ! fn_exists lib_loaded && echo "* ERRO: Não foi possível carregar o script lib" && exit 1
 fi
 
 # -------------------- MYSQL ------------------- #
@@ -47,12 +48,12 @@ create_db_user() {
   local db_user_password="$2"
   local db_host="${3:-127.0.0.1}"
 
-  output "Creating database user $db_user_name .."
+  output "Criando o usuário de banco de dados $db_user_name .."
 
   mariadb -u root -e "CREATE OR REPLACE USER '$db_user_name'@'$db_host' IDENTIFIED BY '$db_user_password';"
   mariadb -u root -e "FLUSH PRIVILEGES;"
 
-  output "Database user $db_user_name created"
+  output "Usuário de banco de dados $db_user_name criado"
 }
 
 grant_all_privileges() {
@@ -60,12 +61,12 @@ grant_all_privileges() {
   local db_user_name="$2"
   local db_host="${3:-127.0.0.1}"
 
-  output "Granting all privileges on $db_name to $db_user_name .."
+  output "Concedendo todos os privilégios em $db_name a $db_user_name .."
 
   mariadb -u root -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user_name'@'$db_host' WITH GRANT OPTION;"
   mariadb -u root -e "FLUSH PRIVILEGES;"
 
-  output "Privileges granted"
+  output "Privilégios concedidos"
 
 }
 
@@ -74,12 +75,12 @@ create_db() {
   local db_user_name="$2"
   local db_host="${3:-127.0.0.1}"
 
-  output "Creating database $db_name .."
+  output "Criando o banco de dados $db_name .."
 
   mariadb -u root -e "CREATE DATABASE $db_name;"
   grant_all_privileges "$db_name" "$db_user_name" "$db_host"
 
-  output "Database $db_name created"
+  output "Banco de dados $db_name criado"
 }
 
 # --------------- Package Manager -------------- #
@@ -123,7 +124,7 @@ install_firewall() {
   case "$OS" in
   debian | ubuntu)
     output ""
-    output "Installing Uncomplicated Firewall (UFW)"
+    output "Instalando o Uncomplicated Firewall (UFW)"
 
     if ! [ -x "$(command -v ufw)" ]; then
       update_repos true
@@ -132,13 +133,13 @@ install_firewall() {
 
     ufw --force enable
 
-    success "Enabled Uncomplicated Firewall (UFW)"
+    success "Uncomplicated Firewall (UFW) ativado"
 
     ;;
   almalinux | rocky)
 
     output ""
-    output "Installing FirewallD"
+    output "Instalando o FirewallD"
 
     if ! [ -x "$(command -v firewall-cmd)" ]; then
       install_packages "firewalld" true
@@ -146,7 +147,7 @@ install_firewall() {
 
     systemctl --now enable firewalld >/dev/null
 
-    success "Enabled FirewallD"
+    success "FirewallD ativado"
 
     ;;
   esac
@@ -171,13 +172,13 @@ firewall_ports() {
 
 # --------- Main installation functions -------- #
 install_composer() {
-  output "Installing composer .."
+  output "Instalando o composer .."
   curl -fsS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-  success "Composer installed!"
+  success "Composer instalado!"
 }
 
 panel_dl() {
-  output "Downloading pelican Panel files .. "
+  output "Baixando os arquivos do Pelican Panel .. "
   mkdir -p /var/www/pelican/storage/framework/cache/data/{9c,9c/a8,8a,8a/69}
   cd /var/www/pelican || exit
 
@@ -187,24 +188,24 @@ panel_dl() {
 
   cp .env.example .env
 
-  success "Downloaded Pelican Panel files!"
+  success "Arquivos do Pelican Panel baixados!"
 }
 
 install_composer_deps() {
-  output "Installing composer dependencies .."
+  output "Instalando as dependências do composer .."
   [ "$OS" == "rocky" ] || [ "$OS" == "almalinux" ] && export PATH=/usr/local/bin:$PATH
   local attempt
   for attempt in 1 2 3; do
     COMPOSER_ALLOW_SUPERUSER=1 timeout 600 composer install --no-dev --optimize-autoloader && break
-    [ "$attempt" == 3 ] && error "composer install failed" && exit 1
-    warning "composer install failed or stalled, retrying .."
+    [ "$attempt" == 3 ] && error "Falha no composer install" && exit 1
+    warning "O composer install falhou ou travou, tentando novamente .."
   done
-  success "Installed composer dependencies!"
+  success "Dependências do composer instaladas!"
 }
 
 # Configure environment
 configure_env() {
-  output "Configuring environment .."
+  output "Configurando o ambiente .."
 
   local app_url="http://$HOSTNAME"
 
@@ -283,7 +284,7 @@ configure_env() {
   mkdir -p /etc/pelican
   php artisan p:node:configuration 1 >/etc/pelican/config.yml
 
-  success "Configured environment!"
+  success "Ambiente configurado!"
 }
 
 # Set proper directory permissions for distro
@@ -300,7 +301,7 @@ set_folder_permissions() {
 }
 
 insert_cronjob() {
-  output "Installing cronjob.. "
+  output "Instalando o cronjob.. "
 
   local web_user
   case "$OS" in
@@ -317,11 +318,11 @@ insert_cronjob() {
     echo "* * * * * php /var/www/pelican/artisan schedule:run >> /dev/null 2>&1"
   } | crontab -u "$web_user" -
 
-  success "Cronjob installed!"
+  success "Cronjob instalado!"
 }
 
 pelican_queue_systemd() {
-  output "Installing pelican-queue service .."
+  output "Instalando o serviço pelican-queue .."
 
   local web_user
   case "$OS" in
@@ -339,7 +340,7 @@ pelican_queue_systemd() {
   systemctl enable pelican-queue.service
   systemctl start pelican-queue
 
-  success "Installed pelican-queue systemd service!"
+  success "Serviço systemd do pelican-queue instalado!"
 }
 
 # -------- OS specific install functions ------- #
@@ -383,7 +384,7 @@ ubuntu_dep() {
   if curl -fsSL "https://ppa.launchpadcontent.net/ondrej/php/ubuntu/dists/${UBUNTU_CODENAME}/Release" >/dev/null; then
     LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
   else
-    warning "Ondrej PHP PPA does not support ${UBUNTU_CODENAME}; using Ubuntu packages."
+    warning "O PPA Ondrej PHP não suporta ${UBUNTU_CODENAME}; usando os pacotes do Ubuntu."
   fi
 }
 
@@ -410,7 +411,7 @@ alma_rocky_dep() {
 }
 
 panel_deps() {
-  output "Installing dependencies for $OS $OS_VER .."
+  output "Instalando dependências para $OS $OS_VER .."
 
   # Update repos before installing
   update_repos
@@ -452,12 +453,12 @@ panel_deps() {
 
   enable_services
 
-  success "Dependencies installed!"
+  success "Dependências instaladas!"
 }
 
 # ------ Webserver configuration functions ----- #
 configure_nginx() {
-  output "Configuring nginx .."
+  output "Configurando o nginx .."
 
   case "$OS" in
   debian | ubuntu)
@@ -484,13 +485,13 @@ configure_nginx() {
   esac
 
   systemctl restart nginx
-  success "Nginx configured!"
+  success "Nginx configurado!"
 }
 
 
 # --------------- Wings functions --------------- #
 wings_deps() {
-  output "Installing dependencies for $OS $OS_VER .."
+  output "Instalando dependências para $OS $OS_VER .."
 
   case "$OS" in
   debian | ubuntu)
@@ -521,22 +522,22 @@ wings_deps() {
   systemctl start docker
   systemctl enable docker
 
-  success "Dependencies installed!"
+  success "Dependências instaladas!"
 }
 
 wings_dl() {
-  echo "* Downloading Pelican Wings.. "
+  echo "* Baixando o Pelican Wings.. "
 
   mkdir -p /etc/pelican /var/run/wings
   curl -fsSL --retry 5 --retry-all-errors --speed-limit 1024 --speed-time 30 -o /usr/local/bin/wings "$WINGS_DL_URL$ARCH"
 
   chmod u+x /usr/local/bin/wings
 
-  success "Pelican Wings downloaded successfully"
+  success "Pelican Wings baixado com sucesso"
 }
 
 wings_systemd() {
-  output "Installing systemd service .."
+  output "Instalando o serviço systemd .."
 
   curl -f -o /etc/systemd/system/wings.service "$GIT_REPO_URL"/configs/wings.service
   systemctl daemon-reload
@@ -545,16 +546,16 @@ wings_systemd() {
   sleep 3
   systemctl start wings
 
-  success "Installed wings systemd service!"
+  success "Serviço systemd do wings instalado!"
 }
 
 # ------------ Summary ------------ #
 summary() {
   print_brake 62
-  output "Pelican Panel installed successfully!"
-  output "Panel URL: http://$HOSTNAME"
-  output "Username: admin"
-  output "Password: $USER_PASSWORD"
+  output "Pelican Panel instalado com sucesso!"
+  output "URL do painel: http://$HOSTNAME"
+  output "Usuário: admin"
+  output "Senha: $USER_PASSWORD"
   print_brake 62
 }
 
@@ -562,11 +563,11 @@ summary() {
 main() {
   # Check for existing installation
   if [ -d "/var/www/pelican" ]; then
-    warning "The script has detected that you already have Pelican panel on your system! You cannot run the script multiple times, it will fail!"
-    echo -e -n "* Are you sure you want to proceed? (y/N): "
+    warning "O script detectou que você já tem o painel Pelican instalado neste sistema! Não é possível executar o script várias vezes, ele falhará!"
+    echo -e -n "* Tem certeza de que deseja continuar? (s/N): "
     read -r CONFIRM_PROCEED || true
-    if [[ ! "$CONFIRM_PROCEED" =~ [Yy] ]]; then
-      error "Installation aborted!"
+    if [[ ! "$CONFIRM_PROCEED" =~ [YySs] ]]; then
+      error "Instalação cancelada!"
       exit 1
     fi
   fi
@@ -576,7 +577,7 @@ main() {
   install_docker_kernel_modules
 
   # --------------- Execute functions --------------- #
-  output "Starting Pelican Panel installation.. this might take a while!"
+  output "Iniciando a instalação do Pelican Panel.. isso pode demorar um pouco!"
   panel_deps
   install_composer
   panel_dl
@@ -589,7 +590,7 @@ main() {
   configure_nginx
   install_firewall
   firewall_ports "22 80 443 8080 2022"
-  output "Installing Pelican Wings .."
+  output "Instalando o Pelican Wings .."
   wings_deps
   wings_dl
   wings_systemd

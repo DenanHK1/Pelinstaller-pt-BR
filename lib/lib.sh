@@ -1,4 +1,5 @@
 #!/bin/bash
+# Versão traduzida para português do Brasil. Modificada a partir do Pelinstaller original (GPL-3.0).
 
 set -e
 
@@ -79,19 +80,19 @@ output() {
 
 success() {
   echo ""
-  output "${COLOR_GREEN}SUCCESS${COLOR_NC}: $1"
+  output "${COLOR_GREEN}SUCESSO${COLOR_NC}: $1"
   echo ""
 }
 
 error() {
   echo ""
-  echo -e "* ${COLOR_RED}ERROR${COLOR_NC}: $1" 1>&2
+  echo -e "* ${COLOR_RED}ERRO${COLOR_NC}: $1" 1>&2
   echo ""
 }
 
 warning() {
   echo ""
-  output "${COLOR_YELLOW}WARNING${COLOR_NC}: $1"
+  output "${COLOR_YELLOW}AVISO${COLOR_NC}: $1"
   echo ""
 }
 
@@ -120,20 +121,20 @@ welcome() {
   get_latest_versions
 
   print_brake 70
-  output "Pelican Panel installation script @ $SCRIPT_RELEASE"
+  output "Script de instalação do Pelican Panel @ $SCRIPT_RELEASE"
   output ""
   output "Copyright (C) 2018 - 2024, Vilhelm Prytz, <vilhelm@prytznet.se>"
   output "Copyright (C) 2021 - 2026, Matthew Jacob, <git@matthew.network>"
   output "https://github.com/Zinidia/Pelinstaller"
   output ""
-  output "This script is not associated with the official Pelican Project."
+  output "Este script não tem relação com o projeto oficial do Pelican."
   output ""
-  output "Using repo $REPO (branch $BRANCH)."
-  output "Running $OS version $OS_VER."
+  output "Usando o repositório $REPO (branch $BRANCH)."
+  output "Executando em $OS, versão $OS_VER."
   if [ "$1" == "panel" ]; then
-    output "Latest pelican/panel is $PELICAN_PANEL_VERSION"
+    output "Última versão do pelican/panel: $PELICAN_PANEL_VERSION"
   elif [ "$1" == "wings" ]; then
-    output "Latest pelican/wings is $PELICAN_WINGS_VERSION"
+    output "Última versão do pelican/wings: $PELICAN_WINGS_VERSION"
   fi
   print_brake 70
 }
@@ -146,7 +147,7 @@ get_latest_release() {
 }
 
 get_latest_versions() {
-  output "Retrieving release information .."
+  output "Obtendo informações de versão .."
   PELICAN_PANEL_VERSION=$(get_latest_release "pelican/panel")
   PELICAN_WINGS_VERSION=$(get_latest_release "pelican/wings")
 }
@@ -186,12 +187,12 @@ create_db_user() {
   local db_user_password="$2"
   local db_host="${3:-127.0.0.1}"
 
-  output "Creating database user $db_user_name .."
+  output "Criando o usuário de banco de dados $db_user_name .."
 
   mariadb -u root -e "CREATE OR REPLACE USER '$db_user_name'@'$db_host' IDENTIFIED BY '$db_user_password';"
   mariadb -u root -e "FLUSH PRIVILEGES;"
 
-  output "Database user $db_user_name created"
+  output "Usuário de banco de dados $db_user_name criado"
 }
 
 grant_all_privileges() {
@@ -199,12 +200,12 @@ grant_all_privileges() {
   local db_user_name="$2"
   local db_host="${3:-127.0.0.1}"
 
-  output "Granting all privileges on $db_name to $db_user_name .."
+  output "Concedendo todos os privilégios em $db_name a $db_user_name .."
 
   mariadb -u root -e "GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user_name'@'$db_host' WITH GRANT OPTION;"
   mariadb -u root -e "FLUSH PRIVILEGES;"
 
-  output "Privileges granted"
+  output "Privilégios concedidos"
 
 }
 
@@ -213,12 +214,12 @@ create_db() {
   local db_user_name="$2"
   local db_host="${3:-127.0.0.1}"
 
-  output "Creating database $db_name .."
+  output "Criando o banco de dados $db_name .."
 
   mariadb -u root -e "CREATE DATABASE $db_name;"
   grant_all_privileges "$db_name" "$db_user_name" "$db_host"
 
-  output "Database $db_name created"
+  output "Banco de dados $db_name criado"
 }
 
 # --------------- Package Manager -------------- #
@@ -265,7 +266,7 @@ install_docker_kernel_modules() {
     modprobe xt_addrtype && return 0
   fi
   install_packages "kernel kernel-modules kernel-modules-extra"
-  error "Docker needs the xt_addrtype kernel module, which is unavailable for the running kernel $(uname -r). A newer kernel was installed: reboot and run the installer again."
+  error "O Docker precisa do módulo de kernel xt_addrtype, que não está disponível para o kernel em execução ($(uname -r)). Um kernel mais recente foi instalado: reinicie o computador e execute o instalador novamente."
   exit 1
 }
 
@@ -344,18 +345,18 @@ ask_firewall() {
 
   case "$OS" in
   debian | ubuntu)
-    echo -e -n "* Do you want to automatically configure UFW (firewall)? (y/N): "
+    echo -e -n "* Deseja configurar o UFW (firewall) automaticamente? (s/N): "
     read -r CONFIRM_UFW
 
-    if [[ "$CONFIRM_UFW" =~ [Yy] ]]; then
+    if [[ "$CONFIRM_UFW" =~ [YySs] ]]; then
       eval "$__resultvar="'true'""
     fi
     ;;
   almalinux | rocky)
-    echo -e -n "* Do you want to automatically configure firewall-cmd (firewall)? (y/N): "
+    echo -e -n "* Deseja configurar o firewall-cmd (firewall) automaticamente? (s/N): "
     read -r CONFIRM_FIREWALL_CMD
 
-    if [[ "$CONFIRM_FIREWALL_CMD" =~ [Yy] ]]; then
+    if [[ "$CONFIRM_FIREWALL_CMD" =~ [YySs] ]]; then
       eval "$__resultvar="'true'""
     fi
     ;;
@@ -366,7 +367,7 @@ install_firewall() {
   case "$OS" in
   debian | ubuntu)
     output ""
-    output "Installing Uncomplicated Firewall (UFW)"
+    output "Instalando o Uncomplicated Firewall (UFW)"
 
     if ! [ -x "$(command -v ufw)" ]; then
       update_repos true
@@ -375,13 +376,13 @@ install_firewall() {
 
     ufw --force enable
 
-    success "Enabled Uncomplicated Firewall (UFW)"
+    success "Uncomplicated Firewall (UFW) ativado"
 
     ;;
   almalinux | rocky)
 
     output ""
-    output "Installing FirewallD"
+    output "Instalando o FirewallD"
 
     if ! [ -x "$(command -v firewall-cmd)" ]; then
       install_packages "firewalld" true
@@ -389,7 +390,7 @@ install_firewall() {
 
     systemctl --now enable firewalld >/dev/null
 
-    success "Enabled FirewallD"
+    success "FirewallD ativado"
 
     ;;
   esac
@@ -416,14 +417,14 @@ firewall_allow_ports() {
 # Panel x86_64 check
 check_os_x86_64() {
   if [ "${ARCH}" != "amd64" ]; then
-    warning "Detected CPU architecture $CPU_ARCHITECTURE"
-    warning "Using any other architecture than 64 bit (x86_64) will cause problems."
+    warning "Arquitetura de CPU detectada: $CPU_ARCHITECTURE"
+    warning "Usar qualquer arquitetura diferente de 64 bits (x86_64) causará problemas."
 
-    echo -e -n "* Are you sure you want to proceed? (y/N):"
+    echo -e -n "* Tem certeza de que deseja continuar? (s/N): "
     read -r choice
 
-    if [[ ! "$choice" =~ [Yy] ]]; then
-      error "Installation aborted!"
+    if [[ ! "$choice" =~ [YySs] ]]; then
+      error "Instalação cancelada!"
       exit 1
     fi
   fi
@@ -431,7 +432,7 @@ check_os_x86_64() {
 
 # Wings virtualization check
 check_virt() {
-  output "Installing virt-what .."
+  output "Instalando o virt-what .."
 
   update_repos true
   install_packages "virt-what" true
@@ -443,30 +444,30 @@ check_virt() {
 
   case "$virt_serv" in
   *openvz* | *lxc*)
-    warning "Unsupported type of virtualization detected. Please consult with your hosting provider whether your server can run Docker or not. Proceed at your own risk."
-    echo -e -n "* Are you sure you want to proceed? (y/N): "
+    warning "Tipo de virtualização não suportado detectado. Consulte o seu provedor de hospedagem para saber se o seu servidor consegue executar o Docker. Prossiga por sua conta e risco."
+    echo -e -n "* Tem certeza de que deseja continuar? (s/N): "
     read -r CONFIRM_PROCEED
-    if [[ ! "$CONFIRM_PROCEED" =~ [Yy] ]]; then
-      error "Installation aborted!"
+    if [[ ! "$CONFIRM_PROCEED" =~ [YySs] ]]; then
+      error "Instalação cancelada!"
       exit 1
     fi
     ;;
   *)
-    [ "$virt_serv" != "" ] && warning "Virtualization: $virt_serv detected."
+    [ "$virt_serv" != "" ] && warning "Virtualização detectada: $virt_serv."
     ;;
   esac
 
   if uname -r | grep -q "xxxx"; then
-    error "Unsupported kernel detected."
+    error "Kernel não suportado detectado."
     exit 1
   fi
 
-  success "System is compatible with docker"
+  success "O sistema é compatível com o Docker"
 }
 
 # Exit with error status code if user is not root
 if [[ $EUID -ne 0 ]]; then
-  error "This script must be executed with root privileges."
+  error "Este script deve ser executado com privilégios de root."
   exit 1
 fi
 
@@ -515,7 +516,7 @@ arm64 | aarch64)
   ARCH=arm64
   ;;
 *)
-  error "Only x86_64 and arm64 are supported!"
+  error "Apenas x86_64 e arm64 são suportados!"
   exit 1
   ;;
 esac
@@ -549,7 +550,7 @@ esac
 
 # Exit if not supported
 if [ "$SUPPORTED" == false ]; then
-  output "$OS $OS_VER is not supported"
-  error "Unsupported operating system"
+  output "$OS $OS_VER não é suportado"
+  error "Sistema operacional não suportado"
   exit 1
 fi
